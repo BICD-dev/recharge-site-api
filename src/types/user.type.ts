@@ -7,8 +7,8 @@ interface userType {
     password: string;
     role: string;
     is_active: boolean;
-    verification_code: string,
-    verification_code_expires: Date;
+    verification_code?: string,
+    verification_code_expires?: Date;
     created_at?: Date;
     updated_at?: Date;
 }

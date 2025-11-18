@@ -1,10 +1,11 @@
 import { verifyEmailController } from "./auth.controller";
-import { createUserWithWallet, findUserByEmail } from "../repository/user.repository";
+import { createUserWithWallet, findUserByEmail, updateVerificationCode } from "../repository/user.repository";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/jwt/jwt-gen";
 import userType from "../types/user.type";
 import { hashPassword } from "../utils/bcrypt/bcrypt";
 import { generateVerificationCode, generateVerificationExpiry } from "../utils/verification/verification";
+
 export const loginService = async (email: string, password: string) => {
   // CHECK THAT ALL FIELDS ARE PRESENT
   if (!email || !password) {
@@ -79,8 +80,7 @@ export const registerService = async (
   }
   // hash password
   const hashedPassword = await hashPassword(password);
-  const verificationCode = await generateVerificationCode();
-  const verificationExpiryDate = await generateVerificationExpiry(30) //code should expire in 30 mins
+//code should expire in 30 mins
   // create user in the database
   const user = createUserWithWallet({
     first_name:first_name,
@@ -90,16 +90,16 @@ export const registerService = async (
     phone,
     role:'user',
     is_active:false,
-    verification_code:verificationCode,
-    verification_code_expires: verificationExpiryDate
   });
-
+  // create verification code
+  const code = await createVerificationCodeService((await user).userData.email)
   return {
     status: "success",
     code: 201,
     message: "User registered successfully",
     data: {
-      user
+      user,
+      verification: code
     },
   };
 };
@@ -112,9 +112,32 @@ export const logoutService = async (userId: string) => {
     message: "User logged out successfully",
   };
 };
-export const sendVerifyCodeService = async (email:string) => {
-  
+
+export const createVerificationCodeService = async (email:string) => {
+  if(!email){
+    return{
+      status:false,
+      code:404,
+      message:"All Fields must be present"
+    }
+  }
+  const user = await findUserByEmail(email);
+  if(!user){
+    return{
+      status:false,
+      code:404,
+      message:"Email does not exist"
+    }
+  }
+
+      const verificationCode = await generateVerificationCode();
+      const verificationExpiryDate = await generateVerificationExpiry(30) 
+
+      // update the verification code for the user
+      const result = await updateVerificationCode( user.id, verificationCode, verificationExpiryDate );
+      return result
 };
+
 export const verifyEmailService = async (token: string) => {
   //
 };
