@@ -1,5 +1,5 @@
 interface userType {
-    id: number;
+    id?: number; // sometimes the id is not sent, like when we are creating a new user, we arent th eone generating the id
     first_name: string;
     last_name: string;
     email: string;

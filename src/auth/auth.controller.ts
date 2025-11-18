@@ -21,8 +21,8 @@ export const loginController = async (req: Request, res: Response) =>{
 
 export const registerController = async (req: Request, res: Response) =>{
     try {
-        const {firstname, lastname, email, password, phone} = req.body;
-        const result = await registerService(firstname, lastname, email, password, phone);
+        const {first_name, last_name, email, password, phone} = req.body;
+        const result = await registerService(first_name, last_name, email, password, phone);
         if(result.status === "success"){
             return res.status(result.code).json(result);
         } else {

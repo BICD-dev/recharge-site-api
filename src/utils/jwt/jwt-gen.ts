@@ -9,8 +9,8 @@ const JWT_SECRET: string = process.env.JWT_SECRET;
 
 interface JwtPayload {
   userId: number;
-  firstname: string;
-  lastname: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone:string;
   role?: string;
