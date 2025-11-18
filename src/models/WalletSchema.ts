@@ -12,8 +12,12 @@ const createWalletTable = async ()=>{
             updated_at TIMESTAMP DEFAULT NOT NULL CURRENT_TIMESTAMP
             )
             `)
-    } catch (error) {
-        
-    }
+    console.log("Wallet table created successfully!");
+  } catch (error) {
+    console.error("Error creating Wallet table:", error);
+  } finally {
+    await pool.end();
+  }
 }
 
+createWalletTable();
