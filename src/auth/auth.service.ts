@@ -142,9 +142,8 @@ export const sendVerificationCodeService = async (email: string) => {
     // update the verfication code in the db
     const updateResult = await update(
       {
-        verification_code: hashedCode,
-        verification_code_expires: verificationExpiryDate,
-        id: user.id
+        update:{verification_code: hashedCode,verification_code_expires: verificationExpiryDate,},
+        conditions:{id: user.id}
       }
     );
 
@@ -210,7 +209,7 @@ export const verifyEmailService = async (user_id: string, codeInput:string) => {
   const updateResult: updateResultType = await update(
     {
       
-      id: record.id,
+      update:{id: record.id},
       conditions:{
         is_active: true,
         verification_code: null,

@@ -10,6 +10,7 @@ interface userDataTypes{
     role:string,
     created_at:Date
 }
+
 export const createUserWithWallet = async (user: userTypes)=>{
     const client = pool.connect();
     try{
@@ -59,19 +60,41 @@ export const findUserByEmail = async (email:string)=>{
     }
 }
 
-export const updateVerificationCode = async (
-    userId:number,
-    newCode:string,
-    newExpiry:Date
+export const update = async (
+    data:{update:{}, conditions:{}}
 )=>{
-    const query = `UPDATE users SET verification_code =$1,
-     verification_code_expires=$2
-     WHERE id=$3
+    const newData = data.update;
+    const conditionData = data.conditions;
+    const updateKeys = Object.keys(newData);
+    const updateValues = Object.values(newData);
+    const updateSet = updateKeys.map((key, index) => `${key} = $${index + 1}`).join(', ');
+
+    const ConditionKeys = Object.keys(conditionData);
+    const values = Object.values(conditionData);
+    const conditions = ConditionKeys.map((key, index) => `${key} = $${index + 1 + updateKeys.length}`).join(' AND ');
+
+    const query = `UPDATE users SET ${updateSet}
+     WHERE ${conditions}
      RETURNING id, email`;
-     const values = [userId, newCode, newExpiry];
-     const updateQuery = await pool.query(query, values)
+     const updateQuery = await pool.query(query, [...updateValues, ...values])
 
      const updatedData = updateQuery.rows[0];
 
         return updatedData || null;
+};
+
+export const findUser = async (data:{})=>{
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const conditions = keys.map((key, index) => `${key} = $${index + 1}`).join(' AND ');
+
+    const query = `SELECT id, first_name, last_name, email, phone, role, is_active, verification_code, verification_code_expires, created_at
+    FROM users
+    WHERE ${conditions}
+    LIMIT 1 
+    const result = await pool.query(query, values);
+    return result.rows[0] || null;`;
+    const result = await pool.query(query, values)
+
+    return result.rows[0] || null;
 }
