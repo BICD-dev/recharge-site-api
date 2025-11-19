@@ -1,4 +1,4 @@
-import { createUserWithWallet, findUserByEmail, updateVerificationCode } from "../repository/user.repository";
+import { createUserWithWallet, findUser, findUserByEmail, update } from "../repository/user.repository";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/jwt/jwt-gen";
 import userType from "../types/user.type";
@@ -136,12 +136,16 @@ export const sendVerificationCodeService = async (email: string) => {
     }
 
     const verificationCode = generateVerificationCode(); 
-    const verificationExpiryDate = generateVerificationExpiry(30); // minutes
-
-    const updateResult = await updateVerificationCode(
-      user.id,
-      verificationCode,
-      verificationExpiryDate
+    const verificationExpiryDate = generateVerificationExpiry(10); // minutes
+    // hash the code
+    const hashedCode = await hashPassword(verificationCode,10);
+    // update the verfication code in the db
+    const updateResult = await update(
+      {
+        verification_code: hashedCode,
+        verification_code_expires: verificationExpiryDate,
+        id: user.id
+      }
     );
 
     if (!updateResult) {
@@ -171,6 +175,53 @@ export const sendVerificationCodeService = async (email: string) => {
 };
 
 
-export const verifyEmailService = async (token: string) => {
-  //
+export const verifyEmailService = async (user_id: string, codeInput:string) => {
+  //fetch record based on user id from token
+  const record = await findUser({id: user_id});
+  if(!record){
+    return {
+      status: "failure",
+      code: 404,
+      message: "User not found"
+    };
+  };
+
+  // check if the code has expired
+  const currentTime = new Date();
+  const codeExpiry = record.verification_code_expires;
+  if(codeExpiry && currentTime > codeExpiry){
+    return {
+      status: "failure",
+      code: 400,
+      message: "Verification code has expired"
+    };
+  }
+  // check if the code on the record matches the input code
+  const storedHashedCode =  record.verification_code;
+  const isCodeValid = await bcrypt.compare(codeInput, storedHashedCode);
+  if(!isCodeValid){
+    return {
+      status: "failure",
+      code: 400,
+      message: "Invalid verification code"
+    };
+  };
+  // if all checks pass, update user record to set is_active to true and clear verification code fields
+  const updateResult: updateResultType = await update(
+    {
+      
+      id: record.id,
+      conditions:{
+        is_active: true,
+        verification_code: null,
+        verification_code_expires: null,
+      }
+    }
+  );
+  return {
+    status: "success",
+    code: 200,
+    message: "Email verified successfully"
+  };
+
 };
