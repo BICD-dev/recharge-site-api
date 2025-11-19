@@ -1,10 +1,10 @@
-import { verifyEmailController } from "./auth.controller";
 import { createUserWithWallet, findUserByEmail, updateVerificationCode } from "../repository/user.repository";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/jwt/jwt-gen";
 import userType from "../types/user.type";
 import { hashPassword } from "../utils/bcrypt/bcrypt";
 import { generateVerificationCode, generateVerificationExpiry } from "../utils/verification/verification";
+import { sendVerificationEmail } from "../utils/brevo/emailService";
 type updateResultType = {
   id:string,
   email:string
@@ -95,7 +95,7 @@ export const registerService = async (
     is_active:false,
   });
   // send verification code
-  const code = await sendVerificationCodeService((await user).userData.email)
+  const sendCode = await sendVerificationCodeService((await user).userData.email)
   return {
     status: "success",
     code: 201,
@@ -121,7 +121,7 @@ export const sendVerificationCodeService = async (email: string) => {
     if (!email) {
       return {
         status: "failure",
-        code: 400,
+        code: 404,
         message: "Email is required"
       };
     }
@@ -151,19 +151,15 @@ export const sendVerificationCodeService = async (email: string) => {
         message: "Failed to update verification details"
       };
     }
+    // send email with code
+    const emailResult = await sendVerificationEmail(email, verificationCode);
+    if (emailResult.status === "success") {
+    return { status: "success", code: 200, message: "Verification code sent", data:{email} };
+  } else {
+    return { status: "failure", code: 500, message: "Failed to send verification email" };
+  }
 
-    // TODO: send email here
-    // await sendVerificationEmail(user.email, verificationCode);
-
-    return {
-      status: "success",
-      code: 200,
-      message: "Verification code sent successfully",
-      data: {
-        email
-      }
-    };
-
+    
   } catch (error) {
     console.error("Verification service error:", error);
     return {

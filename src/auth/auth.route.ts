@@ -5,5 +5,6 @@ const router = Router();
 
 router.post('/login',loginController);
 router.post('/register',registerController);
-router.post("/verify", sendVerificationCodeController);
+router.post("/send-verification-code", sendVerificationCodeController);
+// verifiy the code
 // reset password
