@@ -67,9 +67,11 @@ export const updateVerificationCode = async (
     const query = `UPDATE users SET verification_code =$1,
      verification_code_expires=$2
      WHERE id=$3
-     RETURNING id, verification_code, verification_code_expires`;
+     RETURNING id, email`;
      const values = [userId, newCode, newExpiry];
      const updateQuery = await pool.query(query, values)
 
      const updatedData = updateQuery.rows[0];
+
+        return updatedData || null;
 }

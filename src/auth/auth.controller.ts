@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
-import { loginService, registerService } from "./auth.service";
+import { loginService, registerService, sendVerificationCodeService } from "./auth.service";
+
+
 export const loginController = async (req: Request, res: Response) =>{
     try {
         const {email, password} = req.body;
@@ -38,6 +40,19 @@ export const registerController = async (req: Request, res: Response) =>{
     }
 }
 
-export const verifyEmailController = async (req: Request, res: Response) =>{
+export const sendVerificationCodeController = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const result = await sendVerificationCodeService(email);
 
-}
+    return res.status(result.code).json(result);
+
+  } catch (error) {
+    console.error("Verification code error:", error);
+    return res.status(500).json({
+      status: "error",
+      code: 500,
+      message: "Internal server error",
+    });
+  }
+};
